@@ -5,6 +5,12 @@ from datetime import datetime
 import re
 import telebot
 from telebot import types
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+# Получаем переменные окружения
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Настройка логирования
 logging.basicConfig(
@@ -14,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Инициализация бота
-bot = telebot.TeleBot("5091368575:AAGtFNHNIHEGFlld_RWuOEVWu18FLzTncXY")
+bot = telebot.TeleBot(BOT_TOKEN)
 
 
 # Инициализация базы данных
@@ -579,6 +585,9 @@ def process_answer(message, question_id):
     answer_text = message.text
     user_id = message.from_user.id
 
+    # Регистрируем адаптер для datetime (решение проблемы с DeprecationWarning)
+    sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
+
     conn = sqlite3.connect('elders_council.db', check_same_thread=False)
     cursor = conn.cursor()
 
@@ -608,15 +617,7 @@ def process_answer(message, question_id):
             text=f"✅ Ваш ответ на вопрос «{question_text[:50]}...» успешно добавлен."
         )
 
-        # Обновляем сообщение с вопросом
-        call = types.CallbackQuery(
-            id=0,  # Не используется в этом контексте
-            from_user=message.from_user,
-            message=message,
-            data=f'view_question_{question_id}',
-            chat_instance=0
-        )
-        view_question(call)
+
 
     except Exception as e:
         logger.error(f"Error saving answer: {e}")
